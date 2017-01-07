@@ -137,6 +137,7 @@ public class PushLocationService extends Service implements LocationListener {
         float vel = location.getSpeed();
         String sVel = String.format("%.2f", vel);
         mTextViewVel.setText(sVel+" Km/h");
+
         new UbidotsAPI(location.getLongitude(), location.getLatitude(),
                 location.getAltitude()).execute(token);
     }
@@ -179,7 +180,6 @@ public class PushLocationService extends Service implements LocationListener {
                     }
 
 
-
                 }
             } catch (Exception e) {
                 Handler h = new Handler(getMainLooper());
@@ -205,7 +205,7 @@ public class PushLocationService extends Service implements LocationListener {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            Log.i(TAG, "Valor: "+ values[0].toString());
+
             super.onPostExecute(aVoid);
             stopSelf();
         }

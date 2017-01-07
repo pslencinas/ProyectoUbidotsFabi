@@ -24,6 +24,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -52,6 +53,8 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.ubidots.ApiClient;
+import com.ubidots.Variable;
 import com.ubidots.ubidots.fragments.ChangePushTimeFragment;
 import com.ubidots.ubidots.services.PushLocationService;
 
@@ -63,6 +66,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class UbidotsActivity extends Activity {
@@ -137,34 +142,40 @@ public class UbidotsActivity extends Activity {
             }
         }
 
+
+
+
+
         h = new Handler() {
             public void handleMessage(android.os.Message msg) { //(what, arg1, arg2, obj)
 
+            String token = mSharedPreferences.getString(Constants.TOKEN, null);
+            switch (msg.what) {
+                case RECIEVE_MESSAGE:													// if receive massage
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    int begin = (int)msg.arg1;
+                    int end = (int)msg.arg2;
 
-                switch (msg.what) {
-                    case RECIEVE_MESSAGE:													// if receive massage
-                        byte[] writeBuf = (byte[]) msg.obj;
-                        int begin = (int)msg.arg1;
-                        int end = (int)msg.arg2;
+                    String writeMessage = new String(writeBuf);
+                    writeMessage = writeMessage.substring(begin, end);
 
-                        String writeMessage = new String(writeBuf);
-                        writeMessage = writeMessage.substring(begin, end);
+                    Log.d(TAG, "...readMessage:"+ writeMessage);
 
-                        Log.d(TAG, "...readMessage:"+ writeMessage);
-
-                        if(writeMessage.contains("SW1-A")){
-                            //Toast.makeText(getBaseContext(), " Switch Abierto ", Toast.LENGTH_LONG).show();
-                            mSwitch1.setChecked(true);
-                        }else if(writeMessage.contains("SW1-C")){
-                            //Toast.makeText(getBaseContext(), " Switch Cerrado ", Toast.LENGTH_LONG).show();
-                            mSwitch1.setChecked(false);
-                        }
+                    if(writeMessage.contains("SW1-A")){
+                        //Toast.makeText(getBaseContext(), " Switch Abierto ", Toast.LENGTH_LONG).show();
+                        mSwitch1.setChecked(true);
+                        new UbidotsActivity.UbidotsAPI("SW1-A").execute(token);
+                    }else if(writeMessage.contains("SW1-C")){
+                        //Toast.makeText(getBaseContext(), " Switch Cerrado ", Toast.LENGTH_LONG).show();
+                        mSwitch1.setChecked(false);
+                        new UbidotsActivity.UbidotsAPI("SW1-C").execute(token);
+                    }
 
 
-                        break;
-                }
-            };
+                    break;
+            }
         };
+    };
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();		// get Bluetooth adapter
         checkBTState();
@@ -185,9 +196,9 @@ public class UbidotsActivity extends Activity {
         // Get preferences variables
         boolean firstTime = mSharedPreferences.getBoolean(Constants.FIRST_TIME, true);
         mAlreadyRunning = mSharedPreferences.getBoolean(Constants.SERVICE_RUNNING, false);
-        mTimeToPush = mSharedPreferences.getInt(Constants.PUSH_TIME, 1);
 
-        mTimeToPush = 5; //5 seg cada muestra
+        mTimeToPush = mSharedPreferences.getInt(Constants.PUSH_TIME, 1); //cada 1 seg
+
         mEditor.putInt(Constants.PUSH_TIME, mTimeToPush);
         mEditor.apply();
 
@@ -438,9 +449,9 @@ public class UbidotsActivity extends Activity {
         if (id == R.id.action_change_token) {
             mEditor.putBoolean(Constants.SERVICE_RUNNING, false);
             mEditor.putBoolean(Constants.FIRST_TIME, true);
-            mEditor.putString(Constants.VARIABLE_ID, null);
+            mEditor.putString(Constants.VARIABLE_ID_LOC, null);
             mEditor.putString(Constants.TOKEN, null);
-            mEditor.putString(Constants.DATASOURCE_VARIABLE, null);
+            mEditor.putString(Constants.DATASOURCE_VARIABLE_LOC, null);
             mEditor.putInt(Constants.PUSH_TIME, 1);
             mEditor.apply();
 
@@ -532,6 +543,61 @@ public class UbidotsActivity extends Activity {
             } catch (IOException e) {
                 Log.d(TAG, "...Error data send: " + e.getMessage() + "...");
             }
+        }
+    }
+
+
+    public class UbidotsAPI extends AsyncTask<String, Void, Void> {
+        private final String variableID = mSharedPreferences.getString(Constants.VARIABLE_ID_INT_COMB, null);
+        private String action;
+
+        public UbidotsAPI(String action) {
+            this.action = action;
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+            try {
+                Map<String, Object> context = new HashMap<String, Object>();
+                ApiClient apiClient = new ApiClient().fromToken(params[0]);
+
+                if (variableID != null) {
+                    Variable variable = apiClient.getVariable(variableID);
+                    if(action.equals("SW1-A")){
+                        variable.saveValue(1);
+                    }else if(action.equals("SW1-C")){
+                        variable.saveValue(0);
+                    }
+
+
+                }
+            } catch (Exception e) {
+                Handler h = new Handler(getMainLooper());
+
+                h.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (getApplicationContext() != null) {
+                            Toast.makeText(getApplicationContext(),
+                                    "Error in connection",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                        cancel(true);
+                    }
+                });
+                mEditor.putBoolean(Constants.SERVICE_RUNNING, false);
+                mEditor.apply();
+
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+
+            super.onPostExecute(aVoid);
+
         }
     }
 
