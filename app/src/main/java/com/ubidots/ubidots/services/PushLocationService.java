@@ -151,7 +151,7 @@ public class PushLocationService extends Service implements LocationListener {
     public void onProviderDisabled(String provider) { }
 
     public class UbidotsAPI extends AsyncTask<String, Void, Void> {
-        private final String variableID = mPrefs.getString(Constants.VARIABLE_ID, null);
+        private final String variableID = mPrefs.getString(Constants.VARIABLE_ID_LOC, null);
         private double longitude;
         private double latitude;
         private double altitude;
@@ -178,10 +178,6 @@ public class PushLocationService extends Service implements LocationListener {
                         variable.saveValue(altitude, context);
                     }
 
-                    Variable variableSw = apiClient.getVariable("586c204676254220e8fc29a2");
-                    values = variableSw.getValues();
-
-                    Log.d("doinBackground", "Valor: "+ values[0].toString());
 
 
                 }

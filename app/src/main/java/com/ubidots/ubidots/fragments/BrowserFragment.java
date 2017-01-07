@@ -82,9 +82,13 @@ public class BrowserFragment extends Fragment {
             // Create or get the variable
             mApiClient = new ApiClient().fromToken(token);
             mDataSource = createDataSource();
-            mVariable = createVariable();
+            mVariable = createVariableLoc();
+            mEditorPreferences.putString(Constants.VARIABLE_ID_LOC, mVariable.getId());
 
-            mEditorPreferences.putString(Constants.VARIABLE_ID, mVariable.getId());
+            mVariable = createVariableIntComb();
+            mEditorPreferences.putString(Constants.VARIABLE_ID_INT_COMB, mVariable.getId());
+
+
             mEditorPreferences.apply();
 
             Intent i = new Intent(getActivity().getApplicationContext(), VerificationActivity.class);
@@ -93,7 +97,7 @@ public class BrowserFragment extends Fragment {
         }
 
         private DataSource createDataSource() {
-            String dataSourceName = "Android" + Build.MODEL;
+            String dataSourceName = "Android_" + Build.MODEL + " - SN: " + Build.SERIAL;
             DataSource[] dataSources = mApiClient.getDataSources();
 
             for (DataSource dataSource : dataSources) {
@@ -108,16 +112,32 @@ public class BrowserFragment extends Fragment {
             return mApiClient.createDataSource(dataSourceName, context, null);
         }
 
-        private Variable createVariable() {
+
+        private Variable createVariableLoc() {
             Variable[] variables = mDataSource.getVariables();
 
             for (Variable variable : variables) {
-                if (variable.getName().equals(Constants.DATASOURCE_VARIABLE)) {
+                if (variable.getName().equals(Constants.DATASOURCE_VARIABLE_LOC)) {
                     return variable;
                 }
             }
 
-            return mDataSource.createVariable(Constants.DATASOURCE_VARIABLE, " ");
+            return mDataSource.createVariable(Constants.DATASOURCE_VARIABLE_LOC, " ");
         }
+
+        private Variable createVariableIntComb() {
+            Variable[] variables = mDataSource.getVariables();
+
+            for (Variable variable : variables) {
+                if (variable.getName().equals(Constants.DATASOURCE_VARIABLE_INT_COMB)) {
+                    return variable;
+                }
+            }
+
+            return mDataSource.createVariable(Constants.DATASOURCE_VARIABLE_INT_COMB, " ");
+        }
+
+
+
     }
 }

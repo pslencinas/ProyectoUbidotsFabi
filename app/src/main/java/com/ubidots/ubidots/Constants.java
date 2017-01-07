@@ -8,8 +8,10 @@ public class Constants {
     public static final String FIRST_TIME = "first_time";
     public static final String URL = "url";
     public static final String TOKEN = "token";
-    public static final String DATASOURCE_VARIABLE = "location";
-    public static final String VARIABLE_ID = "variable";
+    public static final String DATASOURCE_VARIABLE_LOC = "location";
+    public static final String DATASOURCE_VARIABLE_INT_COMB = "int_combustible";
+    public static final String VARIABLE_ID_LOC = "variable";
+    public static final String VARIABLE_ID_INT_COMB = "variable";
     public static final String PUSH_TIME = "push_time";
     public static final String SERVICE_RUNNING = "service_running";
 
